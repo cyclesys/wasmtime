@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const err = @import("error.zig");
 
 /// Different ways that Wasmtime can compile WebAssembly.
@@ -66,7 +66,7 @@ pub const Config = opaque {
         return @ptrCast(config);
     }
 
-    /// Destroys the `Config` object.
+    /// Deletes the `Config` object.
     pub fn delete(config: *Config) void {
         c.wasm_config_delete(@ptrCast(config));
     }

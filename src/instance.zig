@@ -1,8 +1,10 @@
-/// \brief Representation of a instance in Wasmtime.
+const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+
+/// Representation of a instance in Wasmtime.
 ///
 /// Instances are represented with a 64-bit identifying integer in Wasmtime.
 /// They do not have any destructor associated with them. Instances cannot
-/// interoperate between #wasmtime_store_t instances and if the wrong instance
+/// interoperate between `Store` instances and if the wrong instance
 /// is passed to the wrong store then it may trigger an assertion to abort the
 /// process.
 pub const Instance = extern struct {
