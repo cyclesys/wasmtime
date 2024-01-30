@@ -1,55 +1,55 @@
-const c = @cImport(@cInclude("wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
 
 fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
-    return struct {
-        inner: Inner,
+    return extern struct {
+        size: usize,
+        data: [*]Elem,
 
-        const Inner = decl("t");
         const ElemVec = @This();
 
-        pub fn newEmpty() ElemVec {
-            const f = comptime decl("new_empty");
-            var inner: Inner = undefined;
-            f(&inner);
-            return ElemVec{ .inner = inner };
+        pub fn newUninitialized(size: usize) ElemVec {
+            const f = decl("new_uninitialized");
+            var ev: ElemVec = undefined;
+            f(&ev, size);
+            return ev;
         }
 
-        pub fn newUninitialized(size: usize) ElemVec {
-            const f = comptime decl("new_uninitialized");
-            var inner: Inner = undefined;
-            f(&inner, size);
-            return ElemVec{ .inner = inner };
+        pub fn newEmpty() ElemVec {
+            const f = decl("new_empty");
+            var ev: ElemVec = undefined;
+            f(&ev);
+            return ev;
         }
 
         pub fn new(init_elems: []const Elem) ElemVec {
-            const f = comptime decl("new");
-            var inner: Inner = undefined;
-            f(&inner, init_elems.len, @ptrCast(init_elems.ptr));
-            return ElemVec{ .inner = inner };
+            const f = decl("new");
+            var ev: ElemVec = undefined;
+            f(&ev, init_elems.len, @ptrCast(init_elems.ptr));
+            return ev;
         }
 
         pub fn newSentinel(comptime s: Elem, init_elems: [:s]const Elem) ElemVec {
-            const f = comptime decl("new");
-            var inner: Inner = undefined;
-            f(&inner, init_elems.len + 1, @ptrCast(init_elems.ptr));
-            return ElemVec{ .inner = inner };
+            const f = decl("new");
+            var ev: ElemVec = undefined;
+            f(&ev, init_elems.len + 1, @ptrCast(init_elems.ptr));
+            return ev;
         }
 
         pub fn copy(dest: *ElemVec, src: ElemVec) void {
-            const f = comptime decl("copy");
-            f(&dest.inner, &src.inner);
+            const f = decl("copy");
+            f(@ptrCast(dest), @ptrCast(&src));
         }
 
         pub fn delete(ev: *ElemVec) void {
-            const f = comptime decl("delete");
-            f(&ev.inner);
+            const f = decl("delete");
+            f(@ptrCast(&ev));
         }
 
         pub fn elems(ev: *ElemVec) []const Elem {
             var out: []const Elem = undefined;
-            out.ptr = @ptrCast(ev.inner.data);
-            out.len = ev.inner.size;
+            out.ptr = @ptrCast(ev.data);
+            out.len = ev.size;
             return out;
         }
 
@@ -64,7 +64,6 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
 }
 
 pub const ByteVec = Vec(u8, "byte");
-
 pub const Name = ByteVec;
-
+pub const Message = Name;
 pub const FrameVec = Vec(*lib.Frame, "frame");

@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
 
 // NOTE: Is TLS the best solution here? If https://github.com/ziglang/zig/issues/2647 is
@@ -21,7 +21,7 @@ pub fn new(msg: [:0]const u8) *c.wasmtime_error_t {
     return c.wasmtime_error_new(msg);
 }
 
-/// Returns the string description of this error.
+/// Returns the string description from the latest error.
 ///
 /// This will "render" the error to a string and then return the string
 /// representation of the error to the caller.
@@ -31,7 +31,7 @@ pub fn new(msg: [:0]const u8) *c.wasmtime_error_t {
 /// Safety: This assumes an error has occurred. No error will result in a panic.
 pub fn message() lib.Name {
     var m = lib.Name.newEmpty();
-    c.wasmtime_error_message(err.?, &m.inner);
+    c.wasmtime_error_message(err.?, @ptrCast(&m));
     return m;
 }
 
@@ -55,7 +55,7 @@ pub fn status() ?u32 {
 /// Safety: This assumes an error has occurred. No error will result in a panic.
 pub fn trace() ?lib.FrameVec {
     var t = lib.FrameVec.newEmpty();
-    c.wasmtime_error_wasm_trace(err.?, &t.inner);
+    c.wasmtime_error_wasm_trace(err.?, @ptrCast(&t));
 
     if (t.inner.size > 0) {
         return t;
