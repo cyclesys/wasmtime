@@ -27,7 +27,7 @@ pub fn build(b: *std.Build) !void {
 }
 
 fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {
-    const cache_root = b.global_cache_root.path orelse ".";
+    const cache_root = b.cache_root.path orelse ".";
 
     const version = "v17.0.0";
     const artifact = try std.mem.join(b.allocator, "-", &.{ "wasmtime", version, target, "c-api" });
@@ -62,6 +62,7 @@ fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {
 
     run(b, &.{ "curl", "-L", url, "-o", tar_artifact_path });
     run(b, &.{ "tar", "-xf", tar_artifact_path, "-C", cache_root });
+    run(b, &.{ "rm", tar_artifact_path });
     return artifact_path;
 }
 
