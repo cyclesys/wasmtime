@@ -1,0 +1,11 @@
+.{
+    .name = "wasmtime",
+    // the version tracks the upstream wasmtime lib version: https://github.com/bytecodealliance/wasmtime
+    .version = "17.0.0",
+    .paths = .{
+        "src/",
+        "build.zig",
+        "build.zig.zon",
+        "LICENSE",
+    },
+}
