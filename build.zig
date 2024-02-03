@@ -24,6 +24,11 @@ pub fn build(b: *std.Build) !void {
     lib.addObjectFile(.{ .path = lib_object_path });
     lib.installHeadersDirectory(lib_headers_path, "wasmtime");
     b.installArtifact(lib);
+
+    const mod = b.addModule("wasmtime", .{
+        .root_source_file = .{ .path = "src/lib.zig" },
+    });
+    mod.linkLibrary(lib);
 }
 
 fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {
