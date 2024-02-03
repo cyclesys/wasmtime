@@ -15,7 +15,7 @@ pub const WasiConfig = opaque {
     /// By default WASI programs have an empty argv list, but this can be used to
     /// explicitly specify what the argv list for the program is.
     ///
-    /// The arguments are copied into the `config` object as part of this function
+    /// The arguments are copied into the `cfg` object as part of this function
     /// call, so `argv` only needs to stay alive for this function call.
     pub fn setArgv(cfg: *WasiConfig, argv: []const [:0]const u8) void {
         c.wasi_config_set_argv(@ptrCast(cfg), @intCast(argv.len), @ptrCast(argv.ptr));
@@ -34,7 +34,7 @@ pub const WasiConfig = opaque {
     ///
     /// It is required that the `names` and `values` both have the same length.
     ///
-    /// The env vars are copied into the `config` object as part of this function
+    /// The env vars are copied into the `cfg` object as part of this function
     /// call, so `names` and `values` only need to stay alive for this function call.
     pub fn setEnv(cfg: *WasiConfig, names: []const [:0]const u8, values: []const [:0]const u8) void {
         if (names.len != values.len) @panic("`names` and `values` must have the same length");

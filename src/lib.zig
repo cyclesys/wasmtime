@@ -1,15 +1,36 @@
 pub usingnamespace @import("config.zig");
 pub usingnamespace @import("engine.zig");
+pub usingnamespace @import("extern.zig");
+pub usingnamespace @import("global.zig");
 pub usingnamespace @import("instance.zig");
-pub const Ref = @import("ref.zig").Ref;
+pub usingnamespace @import("linker.zig");
+pub usingnamespace @import("memory.zig");
+pub usingnamespace @import("module.zig");
+pub usingnamespace @import("ref.zig");
 pub usingnamespace @import("store.zig");
+pub usingnamespace @import("table.zig");
 pub usingnamespace @import("trap.zig");
-pub usingnamespace @import("vec.zig");
+pub usingnamespace @import("val.zig");
 pub usingnamespace @import("wasi.zig");
 
-const err = @import("error.zig");
-pub const errorMessage = err.message;
-pub const errorStatus = err.status;
-pub const errorTrace = err.trace;
+const e = @import("error.zig");
+pub const Error = e.Error;
+pub const err = e.consumeErr;
 
-pub const Finalizer = fn (*anyopaque) void;
+const f = @import("func.zig");
+pub const AsyncErrorTrapReturn = f.AsyncErrorTrapReturn;
+pub const Caller = f.Caller;
+pub const Func = f.Func;
+pub const FuncResult = f.FuncResult;
+pub const Future = f.Future;
+pub const UncheckedFuncResult = f.UncheckedFuncResult;
+
+const vec = @import("vec.zig");
+/// A list of bytes
+pub const ByteVec = vec.Vec(u8, "byte");
+
+/// Alias for `ByteVec`.
+pub const Name = ByteVec;
+
+/// Alias for `Name` i.e. a `ByteVec`.
+pub const Message = Name;

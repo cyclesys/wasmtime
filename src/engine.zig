@@ -1,5 +1,6 @@
 const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
+const err = @import("error.zig");
 
 /// Compilation environment and configuration.
 ///
@@ -51,5 +52,60 @@ pub const Engine = opaque {
     /// See also `Config.epochInterruption`.
     pub fn incrementEpoch(e: *Engine) void {
         c.wasmtime_engine_increment_epoch(@ptrCast(e));
+    }
+
+    /// Validate a WebAssembly binary.
+    ///
+    /// This function will validate the provided byte sequence to determine if it is
+    /// a valid WebAssembly binary within the context of the engine provided.
+    ///
+    /// If the binary is not valid, an error is returned.
+    pub fn validate(e: *Engine, wasm: []const u8) !void {
+        try err.result(c.wasmtime_module_validate(
+            @ptrCast(e),
+            @ptrCast(wasm.ptr),
+            wasm.len,
+        ));
+    }
+
+    /// Build a module from serialized data.
+    ///
+    /// This function does not take ownership of any of its arguments, but the
+    /// returned error and module are owned by the caller.
+    ///
+    /// This function is not safe to receive arbitrary user input. See the Rust
+    /// documentation for more information on what inputs are safe to pass in here
+    /// (e.g. only that of `Module.serialize`)
+    pub fn deserialize(e: *Engine, bytes: []const u8) !*lib.Module {
+        var mod: *lib.Module = undefined;
+        try err.result(c.wasmtime_module_deserialize(
+            @ptrCast(e),
+            @ptrCast(bytes.ptr),
+            bytes.len,
+            @ptrCast(&mod),
+        ));
+        return mod;
+    }
+
+    /// Deserialize a module from an on-disk file.
+    ///
+    /// This function is the same as `Engine.deserialize` except that it
+    /// reads the data for the serialized module from the path on disk. This can be
+    /// faster than the alternative which may require copying the data around.
+    ///
+    /// This function does not take ownership of any of its arguments, but the
+    /// returned error and module are owned by the caller.
+    ///
+    /// This function is not safe to receive arbitrary user input. See the Rust
+    /// documentation for more information on what inputs are safe to pass in here
+    /// (e.g. only that of `Module.serialize`)
+    pub fn deserializeFile(e: *Engine, path: [:0]const u8) !*lib.Module {
+        var mod: *lib.Module = undefined;
+        try err.result(c.wasmtime_module_deserialize_file(
+            @ptrCast(e),
+            @ptrCast(path.ptr),
+            @ptrCast(&mod),
+        ));
+        return mod;
     }
 };

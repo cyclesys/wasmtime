@@ -1,6 +1,7 @@
 const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
 const err = @import("error.zig");
+const UserData = @import("UserData.zig");
 
 /// An interior pointer into a `Store` which is used as
 /// "context" for many functions.
@@ -79,8 +80,44 @@ pub const Context = opaque {
         try err.result(c.wasmtime_context_set_wasi(@ptrCast(ctx), @ptrCast(wasi_cfg)));
     }
 
+    /// Configures the relative deadline at which point WebAssembly code will
+    /// trap or invoke the callback function.
+    ///
+    /// This function configures the store-local epoch deadline after which point
+    /// WebAssembly code will trap or invoke the callback function.
+    ///
+    /// See also `Config.epochInterruption` and `Store.epochDeadlineCallback`.
     pub fn setEpochDeadline(ctx: *Context, ticks_beyond_current: u64) void {
         c.wasmtime_context_set_epoch_deadline(@ptrCast(ctx), ticks_beyond_current);
+    }
+
+    /// Configures a Store to yield execution of async WebAssembly code
+    /// periodically.
+    ///
+    /// When a Store is configured to consume fuel with
+    /// `Config.consumeFuel` this method will configure what happens when
+    /// fuel runs out. Specifically executing WebAssembly will be suspended and
+    /// control will be yielded back to the caller.
+    ///
+    /// This is only suitable with use of a store associated with an async config
+    /// because only then are futures used and yields are possible.
+    ///
+    /// `interval` is the amount of fuel at which to yield. A value of 0 will disable
+    /// yielding.
+    pub fn setFuelAsyncYieldInterval(ctx: *Context, interval: u64) !void {
+        try err.result(c.wasmtime_context_fuel_async_yield_interval(@ptrCast(ctx), interval));
+    }
+
+    /// Configures epoch-deadline expiration to yield to the async caller and
+    /// the update the deadline.
+    ///
+    /// This is only suitable with use of a store associated with an async config
+    /// because only then are futures used and yields are possible.
+    ///
+    /// See the Rust documentation for more:
+    /// https://docs.wasmtime.dev/api/wasmtime/struct.Store.html#method.epoch_deadline_async_yield_and_update
+    pub fn setEpochDeadlineAsyncYieldAndUpdate(ctx: *Context, delta: u64) !void {
+        try err.result(c.wasmtime_context_epoch_deadline_async_yield_and_update(@ptrCast(ctx), delta));
     }
 };
 
@@ -122,11 +159,20 @@ pub const Store = opaque {
     /// Creates a new store within the specified engine, and additional user-provided data attached to the
     /// `Context`, which can later be acquired with `Context.getData`.
     ///
+    /// `data`: either `null` or a pointer to a type that optionally has a `finalize` function:
+    /// ```zig
+    /// const Data = struct {
+    ///     /// Optional
+    ///     pub fn finalize(data: *Data) void {
+    ///     }
+    /// };
+    /// ```
     /// `finalizer`: an optional finalizer for `data`.
     ///
     /// The returned store must be deleted with `Store.delete`.
-    pub fn new(engine: *lib.Engine, data: *anyopaque, finalizer: ?*const fn (*anyopaque) void) *Store {
-        return @ptrCast(c.wasmtime_store_new(@ptrCast(engine), data, finalizer));
+    pub fn new(engine: *lib.Engine, data: anytype) *Store {
+        const ud = UserData.create(data);
+        return @ptrCast(c.wasmtime_store_new(@ptrCast(engine), ud.ptr, ud.finalizer));
     }
 
     /// Deletes the store.
@@ -199,7 +245,12 @@ pub const Store = opaque {
         const Impl = @typeInfo(ImplPtr).Ptr.child;
 
         const ImplExtern = EpochDeadlineExtern(Impl);
-        c.wasmtime_store_epoch_deadline_callback(@ptrCast(s), ImplExtern.update, impl, ImplExtern.finalize);
+        c.wasmtime_store_epoch_deadline_callback(
+            @ptrCast(s),
+            ImplExtern.update,
+            @ptrCast(impl),
+            if (@hasDecl(Impl, "finalize")) ImplExtern.finalize else null,
+        );
     }
 };
 

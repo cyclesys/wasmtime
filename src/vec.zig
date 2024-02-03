@@ -1,13 +1,20 @@
 const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
 
-fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
+/// A list of elements.
+pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
     return extern struct {
+        /// the length of this vector
         size: usize,
+        /// the pointer to the base of this vector
         data: [*]Elem,
 
         const ElemVec = @This();
 
+        /// Initializes the vector with the specified capacity.
+        ///
+        /// This function will initialize the provided vector with capacity to hold the
+        /// specified number of elements.
         pub fn newUninitialized(size: usize) ElemVec {
             const f = decl("new_uninitialized");
             var ev: ElemVec = undefined;
@@ -15,6 +22,7 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
             return ev;
         }
 
+        /// Intializes an empty vector.
         pub fn newEmpty() ElemVec {
             const f = decl("new_empty");
             var ev: ElemVec = undefined;
@@ -22,6 +30,7 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
             return ev;
         }
 
+        /// Copies the specified elements into a new vector.
         pub fn new(init_elems: []const Elem) ElemVec {
             const f = decl("new");
             var ev: ElemVec = undefined;
@@ -29,6 +38,7 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
             return ev;
         }
 
+        /// Copies the specified elements into a new vector with the sentinel value included.
         pub fn newSentinel(comptime s: Elem, init_elems: [:s]const Elem) ElemVec {
             const f = decl("new");
             var ev: ElemVec = undefined;
@@ -36,18 +46,24 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
             return ev;
         }
 
-        pub fn copy(dest: *ElemVec, src: ElemVec) void {
-            const f = decl("copy");
-            f(@ptrCast(dest), @ptrCast(&src));
-        }
-
+        //// Deletes the vector.
         pub fn delete(ev: *ElemVec) void {
             const f = decl("delete");
             f(@ptrCast(&ev));
         }
 
-        pub fn elems(ev: *ElemVec) []const Elem {
-            var out: []const Elem = undefined;
+        /// Copies another vectors elements into this one.
+        ///
+        /// The vector that is being written to should not be previously
+        /// intialized.
+        pub fn copy(v: *ElemVec, src: ElemVec) void {
+            const f = decl("copy");
+            f(@ptrCast(v), @ptrCast(&src));
+        }
+
+        /// The elements of the vector.
+        pub fn elems(ev: *ElemVec) []Elem {
+            var out: []Elem = undefined;
             out.ptr = @ptrCast(ev.data);
             out.len = ev.size;
             return out;
@@ -62,8 +78,3 @@ fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         }
     };
 }
-
-pub const ByteVec = Vec(u8, "byte");
-pub const Name = ByteVec;
-pub const Message = Name;
-pub const FrameVec = Vec(*lib.Frame, "frame");

@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) !void {
     defer b.allocator.free(lib_headers_path);
 
     const lib = b.addStaticLibrary(.{
-        .name = "libwasmtime",
+        .name = "wasmtime",
         .target = target,
         .optimize = optimize,
     });

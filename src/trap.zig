@@ -1,6 +1,6 @@
 const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
 const lib = @import("lib.zig");
-const ref = @import("ref.zig");
+const vec = @import("vec.zig");
 
 /// Opaque struct representing a frame of a wasm stack trace.
 pub const Frame = opaque {
@@ -60,6 +60,8 @@ pub const Frame = opaque {
     }
 };
 
+pub const FrameVec = vec.Vec(*lib.Frame, "frame");
+
 /// Opaque struct representing a wasm trap.
 pub const Trap = opaque {
     /// Code of an instruction trap.
@@ -109,22 +111,16 @@ pub const Trap = opaque {
         return @ptrCast(c.wasmtime_trap_new(@ptrCast(msg.ptr), msg.len));
     }
 
-    /// Creates a new trap with the provided message.
-    ///
-    /// This function will create a new trap within the given `Store` with the
-    /// provided message. This will also capture the backtrace, if any, of wasm
-    /// frames on the stack.
-    ///
-    /// This function does not take ownership of either argument.
-    ///
-    /// The caller is responsible for deallocating the trap returned.
-    pub fn newWithStore(store: *lib.Store, msg: [:0]const u8) *Trap {
-        return @ptrCast(c.wasm_trap_new(@ptrCast(store), @ptrCast(msg)));
-    }
-
     /// Deletes the trap
     pub fn delete(t: *Trap) void {
         c.wasm_trap_delete(@ptrCast(t));
+    }
+
+    /// Copies a trap to a new one.
+    ///
+    /// The caller is responsible for deleting the returned trap.
+    pub fn copy(t: *const Trap) *Trap {
+        return @ptrCast(c.wasm_trap_copy(@ptrCast(t)));
     }
 
     /// Attempts to extract the trap code from this trap.
@@ -171,6 +167,4 @@ pub const Trap = opaque {
         c.wasm_trap_trace(@ptrCast(t), @ptrCast(&fv));
         return fv;
     }
-
-    pub usingnamespace ref.MakeRef(Trap);
 };
