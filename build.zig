@@ -2,7 +2,6 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
 
     const artifact_path = try cacheArtifact(b, switch (target.result.os.tag) {
         .linux => "x86_64-linux",
@@ -16,19 +15,12 @@ pub fn build(b: *std.Build) !void {
     const lib_headers_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "include" });
     defer b.allocator.free(lib_headers_path);
 
-    const lib = b.addStaticLibrary(.{
-        .name = "wasmtime",
-        .target = target,
-        .optimize = optimize,
-    });
-    lib.addObjectFile(.{ .path = lib_object_path });
-    lib.installHeadersDirectory(lib_headers_path, "wasmtime");
-    b.installArtifact(lib);
-
     const mod = b.addModule("wasmtime", .{
         .root_source_file = .{ .path = "src/lib.zig" },
+        .link_libcpp = true,
     });
-    mod.linkLibrary(lib);
+    mod.addObjectFile(.{ .path = lib_object_path });
+    mod.addIncludePath(.{ .path = lib_headers_path });
 }
 
 fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {

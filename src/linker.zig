@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const lib = @import("lib.zig");
 const err = @import("error.zig");
 const func = @import("func.zig");
@@ -71,7 +71,7 @@ pub const Linker = opaque {
     /// See `Func.new` for more details.
     pub fn defineFunc(l: *Linker, mod: []const u8, name: []const u8, ty: *lib.FuncType, impl: anytype) !void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = func.FuncExtern(Impl);
         try err.result(c.wasmtime_linker_define_func(
             @ptrCast(l),
@@ -94,7 +94,7 @@ pub const Linker = opaque {
     /// See `Func.newUnchecked` for more details.
     pub fn defineFuncUnchecked(l: *Linker, mod: []const u8, name: []const u8, ty: *lib.FuncType, impl: anytype) !void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = func.FuncUncheckedExtern(Impl);
         try err.result(c.wasmtime_linker_define_func_unchecked(
             @ptrCast(l),
@@ -152,7 +152,7 @@ pub const Linker = opaque {
     /// See also `Func.new` for more info on the `call` arguments.
     pub fn defineAsyncFunc(l: *Linker, mod: []const u8, name: []const u8, ty: *const lib.FuncType, impl: anytype) !void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = FuncAsyncExtern(Impl);
         try err.result(c.wasmtime_linker_define_async_func(
             @ptrCast(l),
@@ -313,7 +313,7 @@ pub const Linker = opaque {
 fn FuncAsyncExtern(comptime Impl: type) type {
     return struct {
         fn call(
-            ptr: *anyopaque,
+            ptr: ?*anyopaque,
             c_caller: *c.wasmtime_caller_t,
             c_args: [*]const c.wasmtime_val_t,
             args_len: usize,
@@ -322,7 +322,7 @@ fn FuncAsyncExtern(comptime Impl: type) type {
             c_ret_trap: **c.wasm_trap_t,
             continuation_ret: *c.wasmtime_async_continuation_t,
         ) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+            const impl: *Impl = @ptrCast(ptr.?);
             const caller: *lib.Func.Caller = @ptrCast(c_caller);
             const args: []const lib.Val = @ptrCast(c_args[0..args_len]);
             const ret_vals: []lib.Val = @ptrCast(c_ret[0..ret_len]);
@@ -337,9 +337,14 @@ fn FuncAsyncExtern(comptime Impl: type) type {
             Impl.call(impl, caller, args, ret_vals, ret_trap);
         }
 
-        fn state(ptr: *anyopaque) callconv(.C) bool {
-            const impl: *Impl = @ptrCast(ptr);
+        fn state(ptr: ?*anyopaque) callconv(.C) bool {
+            const impl: *Impl = @ptrCast(ptr.?);
             return Impl.state(impl);
+        }
+
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
+            Impl.finalize(impl);
         }
     };
 }

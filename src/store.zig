@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const lib = @import("lib.zig");
 const err = @import("error.zig");
 const UserData = @import("UserData.zig");
@@ -139,10 +139,6 @@ pub const EpochDeadlineUpdate = struct {
     behavior: EpochDeadlineUpdateBehavior,
 };
 
-/// This function will be called when the running WebAssembly function has exceeded its epoch deadline. This
-/// function can return an error to terminate the function.
-pub const EpochDeadlineCallback = fn (ctx: *Context, data: *anyopaque) anyerror!EpochDeadlineUpdate;
-
 /// Storage of WebAssembly objects
 ///
 /// A store is the unit of isolation between WebAssembly instances in an
@@ -242,7 +238,7 @@ pub const Store = opaque {
     /// See also `Config.epochInterruption` and `Context.setEpochDeadline`.
     pub fn epochDeadlineCallback(s: *Store, impl: anytype) void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
 
         const ImplExtern = EpochDeadlineExtern(Impl);
         c.wasmtime_store_epoch_deadline_callback(
@@ -258,26 +254,21 @@ fn EpochDeadlineExtern(comptime Impl: type) type {
     return struct {
         fn update(
             ctx: *c.wasmtime_context_t,
-            data: *anyopaque,
+            data: ?*anyopaque,
             out_delta: *u64,
             out_kind: *c.wasmtime_update_deadline_kind_t,
         ) callconv(.C) ?*c.wasmtime_error_t {
-            const impl: *Impl = @ptrCast(data);
+            const impl: *Impl = @ptrCast(data.?);
             const context: *Context = @ptrCast(ctx);
-            const result = Impl.update(impl, context) catch |e| {
+            const result: EpochDeadlineUpdate = Impl.update(impl, context) catch |e| {
                 return err.new(@tagName(e));
             };
 
-            switch (result) {
-                .continues => |delta| {
-                    out_delta.* = delta;
-                    out_kind.* = c.WASMTIME_UPDATE_DEADLINE_CONTINUE;
-                },
-                .yields => |delta| {
-                    out_delta.* = delta;
-                    out_kind.* = c.WASMTIME_UPDATE_DEADLINE_YIELD;
-                },
-            }
+            out_delta.* = result.delta;
+            out_kind.* = switch (result.behavior) {
+                .continues => c.WASMTIME_UPDATE_DEADLINE_CONTINUE,
+                .yields => c.WASMTIME_UPDATE_DEADLINE_YIELD,
+            };
             return null;
         }
 

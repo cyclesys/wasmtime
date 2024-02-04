@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const lib = @import("lib.zig");
 const err = @import("error.zig");
 

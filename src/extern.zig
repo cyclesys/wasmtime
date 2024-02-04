@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const lib = @import("lib.zig");
 
 /// The kind of external item represented by an `ExternType` or `Extern`.

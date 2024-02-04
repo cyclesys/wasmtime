@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const lib = @import("lib.zig");
 const err = @import("error.zig");
 const ref = @import("ref.zig");
@@ -219,7 +219,7 @@ pub const Func = extern struct {
     /// ```
     pub fn new(ctx: *lib.Context, ty: *const FuncType, impl: anytype) Func {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = FuncExtern(Impl);
 
         var ret: Func = undefined;
@@ -286,7 +286,7 @@ pub const Func = extern struct {
     /// ```
     pub fn newUnchecked(ctx: *lib.Context, ty: *const FuncType, impl: anytype) Func {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = FuncUncheckedExtern(Impl);
 
         var ret: Func = undefined;
@@ -459,14 +459,14 @@ pub const Func = extern struct {
 pub fn FuncExtern(comptime Impl: type) type {
     return struct {
         fn call(
-            ptr: *anyopaque,
+            ptr: ?*anyopaque,
             c_caller: *c.wasmtime_caller_t,
             c_args: [*]const c.wasmtime_val_t,
             args_len: usize,
             c_ret: [*]c.wasmtime_val_t,
             ret_len: usize,
         ) callconv(.C) ?*c.wasm_trap_t {
-            const impl: *Impl = @ptrCast(ptr);
+            const impl: *Impl = @ptrCast(ptr.?);
             const caller: *Caller = @ptrCast(c_caller);
             const args: []const lib.Val = @ptrCast(c_args[0..args_len]);
             const result: FuncResult = Impl.call(impl, caller, args);
@@ -482,8 +482,8 @@ pub fn FuncExtern(comptime Impl: type) type {
             }
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };
@@ -492,12 +492,12 @@ pub fn FuncExtern(comptime Impl: type) type {
 pub fn FuncUncheckedExtern(comptime Impl: type) type {
     return struct {
         fn call(
-            ptr: *anyopaque,
+            ptr: ?*anyopaque,
             c_caller: *c.wasmtime_caller_t,
             aar: [*]c.wasmtime_val_raw_t,
             aar_len: usize,
         ) callconv(.C) ?*c.wasm_trap_t {
-            const impl: *Impl = @ptrCast(ptr);
+            const impl: *Impl = @ptrCast(ptr.?);
             const caller: *Caller = @ptrCast(c_caller);
             const args: []const lib.RawVal = @ptrCast(aar[0..aar_len]);
             const result: UncheckedFuncResult = Impl.call(impl, caller, args);
@@ -513,8 +513,8 @@ pub fn FuncUncheckedExtern(comptime Impl: type) type {
             }
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };

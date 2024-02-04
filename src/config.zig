@@ -1,4 +1,4 @@
-const c = @cImport(@cInclude("wasmtime/wasmtime.h"));
+const c = @cImport(@cInclude("wasmtime.h"));
 const err = @import("error.zig");
 
 /// Different ways that Wasmtime can compile WebAssembly.
@@ -444,7 +444,7 @@ pub const Config = opaque {
     /// ```
     pub fn memoryCreator(cfg: *Config, impl: anytype) void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = MemoryCreatorExtern(Impl);
         var creator = c.wasmtime_memory_creator_t{
             .env = @ptrCast(impl),
@@ -561,7 +561,7 @@ pub const Config = opaque {
     /// ```
     pub fn stackCreator(cfg: *Config, impl: anytype) void {
         const ImplPtr = @TypeOf(impl);
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = StackCreatorExtern(Impl);
         var creator = c.wasmtime_stack_creator_t{
             .env = @ptrCast(impl),
@@ -575,7 +575,7 @@ pub const Config = opaque {
 fn MemoryCreatorExtern(comptime Impl: type) type {
     return struct {
         fn newMemory(
-            ptr: *anyopaque,
+            ptr: ?*anyopaque,
             ty: *const c.wasm_memorytype_t,
             _: usize, // `min` is discarded because we get the value by calling `c.wasmtime_memorytype_minimum` instead.
             _: usize, // `max` is discarded because we get the value by calling `c.wasmtime_memorytype_maximum` instead.
@@ -583,7 +583,7 @@ fn MemoryCreatorExtern(comptime Impl: type) type {
             guard_size: usize,
             mem_ret: *c.wasmtime_linear_memory_t,
         ) callconv(.C) ?*c.wasmtime_error_t {
-            const impl: *Impl = @ptrCast(ptr);
+            const impl: *Impl = @ptrCast(ptr.?);
 
             const min: usize = @intCast(c.wasmtime_memorytype_minimum(ty));
             const max: ?usize = blk: {
@@ -600,7 +600,7 @@ fn MemoryCreatorExtern(comptime Impl: type) type {
             };
 
             const MemImplPtr = @TypeOf(new_mem);
-            const MemImpl = @typeInfo(MemImplPtr).Ptr.child;
+            const MemImpl = @typeInfo(MemImplPtr).Pointer.child;
             const MemImplExtern = LinearMemoryExtern(MemImpl);
             mem_ret.* = c.wasmtime_linear_memory_t{
                 .env = @ptrCast(new_mem),
@@ -612,8 +612,8 @@ fn MemoryCreatorExtern(comptime Impl: type) type {
             return null;
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };
@@ -621,24 +621,24 @@ fn MemoryCreatorExtern(comptime Impl: type) type {
 
 fn LinearMemoryExtern(comptime Impl: type) type {
     return struct {
-        fn getMemory(ptr: *anyopaque, size: *usize, max_size: *usize) callconv(.C) [*]u8 {
-            const impl: *Impl = @ptrCast(ptr);
+        fn getMemory(ptr: ?*anyopaque, size: *usize, max_size: *usize) callconv(.C) [*]u8 {
+            const impl: *Impl = @ptrCast(ptr.?);
             const mem: LinearMemory = Impl.getMemory(impl);
             size.* = mem.bytes.len;
             max_size.* = mem.capacity;
             return mem.bytes.ptr;
         }
 
-        fn growMemory(ptr: *anyopaque, new_size: usize) callconv(.C) ?*c.wasmtime_error_t {
-            const impl: *Impl = @ptrCast(ptr);
+        fn growMemory(ptr: ?*anyopaque, new_size: usize) callconv(.C) ?*c.wasmtime_error_t {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.growMemory(impl, new_size) catch |e| {
                 return err.new(@typeName(Impl) ++ ".growMemory error: " ++ @tagName(e));
             };
             return null;
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };
@@ -646,14 +646,14 @@ fn LinearMemoryExtern(comptime Impl: type) type {
 
 fn StackCreatorExtern(comptime Impl: type) type {
     return struct {
-        fn newStack(ptr: *anyopaque, size: usize, stack_ret: *c.wasmtime_stack_memory_t) callconv(.C) ?*c.wasmtime_error_t {
-            const impl: *Impl = @ptrCast(ptr);
+        fn newStack(ptr: ?*anyopaque, size: usize, stack_ret: *c.wasmtime_stack_memory_t) callconv(.C) ?*c.wasmtime_error_t {
+            const impl: *Impl = @ptrCast(ptr.?);
             const stack_mem = Impl.newStack(impl, size) catch |e| {
                 return err.new(@typeName(Impl) ++ ".newStack error: " ++ @tagName(e));
             };
 
             const StackImplPtr = @TypeOf(stack_mem);
-            const StackImpl = @typeInfo(StackImplPtr).Ptr.child;
+            const StackImpl = @typeInfo(StackImplPtr).Pointer.child;
             const StackImplExtern = StackMemoryExtern(StackImpl);
             stack_ret.* = c.wasmtime_stack_memory_t{
                 .env = @ptrCast(stack_mem),
@@ -662,8 +662,8 @@ fn StackCreatorExtern(comptime Impl: type) type {
             };
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };
@@ -671,15 +671,15 @@ fn StackCreatorExtern(comptime Impl: type) type {
 
 fn StackMemoryExtern(comptime Impl: type) type {
     return struct {
-        fn getMemory(ptr: *anyopaque, out_len: usize) callconv(.C) [*]u8 {
-            const impl: *Impl = @ptrCast(ptr);
+        fn getMemory(ptr: ?*anyopaque, out_len: usize) callconv(.C) [*]u8 {
+            const impl: *Impl = @ptrCast(ptr.?);
             const mem: []u8 = Impl.getMemory(impl);
             out_len.* = mem.len;
             return mem.ptr;
         }
 
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };

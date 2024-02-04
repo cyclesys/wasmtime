@@ -1,11 +1,11 @@
 const UserData = @This();
 
 ptr: ?*anyopaque,
-finalizer: ?*const fn (*anyopaque) void,
+finalizer: ?*const fn (?*anyopaque) callconv(.C) void,
 
 pub fn create(data: anytype) UserData {
     const Data = @TypeOf(data);
-    if (@typeInfo(Data) == .Ptr) {
+    if (@typeInfo(Data) == .Pointer) {
         const DataExtern = FinalizerExtern(Data);
         return UserData{
             .ptr = @ptrCast(data),
@@ -15,7 +15,7 @@ pub fn create(data: anytype) UserData {
 
     if (@typeInfo(Data) == .Optional) {
         const ImplPtr = @typeInfo(Data).Optional.child;
-        const Impl = @typeInfo(ImplPtr).Ptr.child;
+        const Impl = @typeInfo(ImplPtr).Pointer.child;
         const ImplExtern = FinalizerExtern(Impl);
         if (data) |ptr| {
             return UserData{
@@ -37,8 +37,8 @@ pub fn create(data: anytype) UserData {
 
 fn FinalizerExtern(comptime Impl: type) type {
     return struct {
-        fn finalize(ptr: *anyopaque) callconv(.C) void {
-            const impl: *Impl = @ptrCast(ptr);
+        fn finalize(ptr: ?*anyopaque) callconv(.C) void {
+            const impl: *Impl = @ptrCast(ptr.?);
             Impl.finalize(impl);
         }
     };
