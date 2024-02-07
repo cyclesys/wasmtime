@@ -18,12 +18,13 @@ pub const Error = e.Error;
 pub const err = e.consumeErr;
 
 const f = @import("func.zig");
-pub const AsyncErrorTrapReturn = f.AsyncErrorTrapReturn;
+pub const FuncType = f.FuncType;
 pub const Caller = f.Caller;
-pub const Func = f.Func;
 pub const FuncResult = f.FuncResult;
-pub const Future = f.Future;
 pub const UncheckedFuncResult = f.UncheckedFuncResult;
+pub const Future = f.Future;
+pub const AsyncErrorTrapReturn = f.AsyncErrorTrapReturn;
+pub const Func = f.Func;
 
 const vec = @import("vec.zig");
 /// A list of bytes
