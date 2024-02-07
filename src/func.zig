@@ -180,8 +180,6 @@ pub const Func = extern struct {
     /// Internal index within the store.
     index: usize,
 
-    pub usingnamespace ref.MakeRef(Func, "func");
-
     /// Creates a new host-defined function.
     ///
     /// Inserts a host-defined function into the `ctx` provided which can be used
