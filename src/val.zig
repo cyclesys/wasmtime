@@ -39,7 +39,7 @@ pub const ValType = opaque {
 
     /// Returns the associated kind for this value type.
     pub fn kind(t: *const ValType) ValKind {
-        return @enumFromInt(c.wasmtime_valtype_kind(@ptrCast(t)));
+        return @enumFromInt(c.wasm_valtype_kind(@ptrCast(t)));
     }
 };
 
