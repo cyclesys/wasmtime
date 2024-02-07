@@ -18,7 +18,7 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         pub fn newUninitialized(size: usize) ElemVec {
             const f = decl("new_uninitialized");
             var ev: ElemVec = undefined;
-            f(&ev, size);
+            f(@ptrCast(&ev), size);
             return ev;
         }
 
@@ -26,7 +26,7 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         pub fn newEmpty() ElemVec {
             const f = decl("new_empty");
             var ev: ElemVec = undefined;
-            f(&ev);
+            f(@ptrCast(&ev));
             return ev;
         }
 
@@ -34,7 +34,7 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         pub fn new(init_elems: []const Elem) ElemVec {
             const f = decl("new");
             var ev: ElemVec = undefined;
-            f(&ev, init_elems.len, @ptrCast(init_elems.ptr));
+            f(@ptrCast(&ev), init_elems.len, @ptrCast(init_elems.ptr));
             return ev;
         }
 
@@ -42,14 +42,14 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         pub fn newSentinel(comptime s: Elem, init_elems: [:s]const Elem) ElemVec {
             const f = decl("new");
             var ev: ElemVec = undefined;
-            f(&ev, init_elems.len + 1, @ptrCast(init_elems.ptr));
+            f(@ptrCast(&ev), init_elems.len + 1, @ptrCast(init_elems.ptr));
             return ev;
         }
 
         //// Deletes the vector.
         pub fn delete(ev: *ElemVec) void {
             const f = decl("delete");
-            f(@ptrCast(&ev));
+            f(@ptrCast(ev));
         }
 
         /// Copies another vectors elements into this one.
