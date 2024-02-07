@@ -42,13 +42,13 @@ pub const Instance = extern struct {
     /// level, and `Linker.instantiate` is provided for a more ergonomic
     /// name-based resolution API.
     ///
+    /// This function also requires that all `imports` specified must be owned
+    /// by the store provided.
+    ///
     /// This function can result in:
     /// 1. The instance is created successfully, and is returned through `InstanceResult.instance`.
     /// 2. The instance was not created due to a trap, which is returned through `InstanceResult.trap`.
     /// 3. The instance was not created due to an error which is returned.
-    ///
-    /// Note that this function requires that all `imports` specified must be owned
-    /// by the store provided as well.
     ///
     /// This function does not take ownership of any of its arguments, but all return
     /// values are owned by the caller.

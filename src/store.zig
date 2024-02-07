@@ -163,8 +163,6 @@ pub const Store = opaque {
     ///     }
     /// };
     /// ```
-    /// `finalizer`: an optional finalizer for `data`.
-    ///
     /// The returned store must be deleted with `Store.delete`.
     pub fn new(engine: *lib.Engine, data: anytype) *Store {
         const ud = UserData.create(data);
