@@ -66,7 +66,7 @@ pub const Error = opaque {
     ///
     /// Caller owns the returned `Name` and must call `Name.delete` to free it.
     pub fn message(e: *Error) lib.Name {
-        var m = lib.Name.newEmpty();
+        var m: lib.Name = undefined;
         c.wasmtime_error_message(@ptrCast(e), @ptrCast(&m));
         return m;
     }
@@ -85,7 +85,7 @@ pub const Error = opaque {
     /// If no trace is available it will return `null`.
     /// If not null, the caller must call `delete` to free the trace.
     pub fn trace(e: *Error) ?lib.FrameVec {
-        var t = lib.FrameVec.newEmpty();
+        var t: lib.FrameVec = undefined;
         c.wasmtime_error_wasm_trace(e, @ptrCast(&t));
 
         if (t.inner.size > 0) {
