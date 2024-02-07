@@ -38,7 +38,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `FuncType`.
-    pub fn asFuncTypeConst(t: *const ExternType) *const lib.FuncType {
+    pub fn asFuncTypeConst(t: *const ExternType) ?*const lib.FuncType {
         return @ptrCast(c.wasm_externtype_as_functype_const(@ptrCast(t)));
     }
 
@@ -46,7 +46,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `GlobalType`.
-    pub fn asGlobalType(t: *ExternType) *lib.GlobalType {
+    pub fn asGlobalType(t: *ExternType) ?*lib.GlobalType {
         return @ptrCast(c.wasm_externtype_as_globaltype(@ptrCast(t)));
     }
 
@@ -54,7 +54,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `GlobalType`.
-    pub fn asGlobalTypeConst(t: *const ExternType) *const lib.GlobalType {
+    pub fn asGlobalTypeConst(t: *const ExternType) ?*const lib.GlobalType {
         return @ptrCast(c.wasm_externtype_as_globaltype_const(@ptrCast(t)));
     }
 
@@ -62,7 +62,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `TableType`.
-    pub fn asTableType(t: *ExternType) *lib.TableType {
+    pub fn asTableType(t: *ExternType) ?*lib.TableType {
         return @ptrCast(c.wasm_externtype_as_tabletype(@ptrCast(t)));
     }
 
@@ -70,7 +70,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `TableType`.
-    pub fn asTableTypeConst(t: *const ExternType) *const lib.TableType {
+    pub fn asTableTypeConst(t: *const ExternType) ?*const lib.TableType {
         return @ptrCast(c.wasm_externtype_as_tabletype_const(@ptrCast(t)));
     }
 
@@ -78,7 +78,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `MemoryType`.
-    pub fn asMemoryType(t: *ExternType) *lib.MemoryType {
+    pub fn asMemoryType(t: *ExternType) ?*lib.MemoryType {
         return @ptrCast(c.wasm_externtype_as_memorytype(@ptrCast(t)));
     }
 
@@ -86,7 +86,7 @@ pub const ExternType = opaque {
     ///
     /// The returned value is owned by the `ExternType` argument and should not
     /// be deleted. Returns `null` if the provided argument is not a `MemoryType`.
-    pub fn asMemoryTypeConst(t: *const ExternType) *const lib.MemoryType {
+    pub fn asMemoryTypeConst(t: *const ExternType) ?*const lib.MemoryType {
         return @ptrCast(c.wasm_externtype_as_memorytype_const(@ptrCast(t)));
     }
 };
