@@ -62,7 +62,7 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         }
 
         /// The elements of the vector.
-        pub fn elems(ev: *ElemVec) []Elem {
+        pub fn elems(ev: ElemVec) []Elem {
             var out: []Elem = undefined;
             out.ptr = @ptrCast(ev.data);
             out.len = ev.size;
