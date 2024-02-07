@@ -128,7 +128,7 @@ pub const Module = opaque {
         return imps;
     }
 
-    pub fn exports(m: *const Module) ExportType {
+    pub fn exports(m: *const Module) ExportTypeVec {
         var exps: ExportTypeVec = undefined;
         c.wasmtime_module_exports(@ptrCast(m), @ptrCast(&exps));
         return exps;
