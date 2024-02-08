@@ -7,7 +7,7 @@ pub const InstanceResult = union(enum) {
     trap: *lib.Trap,
 };
 
-pub const ExportNthResult = struct {
+pub const NthExport = struct {
     name: []const u8,
     ext: lib.Extern,
 };
@@ -75,11 +75,11 @@ pub const Instance = extern struct {
     ///
     /// Doesn't take ownership of any arguments but does give ownership of the
     /// returned `Extern`.
-    pub fn exportGet(i: *const Instance, ctx: *lib.Context, name: []const u8) ?lib.Extern {
+    pub fn getExport(i: Instance, ctx: *lib.Context, name: []const u8) ?lib.Extern {
         var ext: lib.Extern = undefined;
         if (c.wasmtime_instance_export_get(
             @ptrCast(ctx),
-            @ptrCast(i),
+            @ptrCast(&i),
             @ptrCast(name.ptr),
             name.len,
             @ptrCast(&ext),
@@ -99,19 +99,19 @@ pub const Instance = extern struct {
     /// Doesn't take ownership of any arguments but does return ownership of the
     /// `Extern`. The `name` slice is owned by the `ctx` and must be immediately
     /// used before calling any other APIs on `Context`.
-    pub fn exportNth(i: *const Instance, ctx: *lib.Context, index: usize) ?ExportNthResult {
+    pub fn getNthExport(i: Instance, ctx: *lib.Context, index: usize) ?NthExport {
         var name: *c_char = undefined;
         var name_len: usize = undefined;
         var ext: lib.Extern = undefined;
         if (c.wasmtime_instance_export_nth(
             @ptrCast(ctx),
-            @ptrCast(i),
+            @ptrCast(&i),
             index,
             &name,
             &name_len,
             @ptrCast(&ext),
         )) {
-            var result = ExportNthResult{
+            var result = NthExport{
                 .name = undefined,
                 .ext = ext,
             };

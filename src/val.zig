@@ -161,6 +161,55 @@ pub const Val = extern struct {
         extern_ref: *ExternRef,
     };
 
+    pub fn newI32(v: i32) Val {
+        return Val{
+            .tag = .i32,
+            .data = .{ .i32 = v },
+        };
+    }
+
+    pub fn newI64(v: i64) Val {
+        return Val{
+            .tag = .i64,
+            .data = .{ .i64 = v },
+        };
+    }
+
+    pub fn newF32(v: f32) Val {
+        return Val{
+            .tag = .f32,
+            .data = .{ .f32 = v },
+        };
+    }
+
+    pub fn newF64(v: f64) Val {
+        return Val{
+            .tag = .f64,
+            .data = .{ .f64 = v },
+        };
+    }
+
+    pub fn newV128(v: v128) Val {
+        return Val{
+            .tag = .v128,
+            .data = .{ .v128 = v },
+        };
+    }
+
+    pub fn newFuncRef(v: lib.Func) Val {
+        return Val{
+            .tag = .func_ref,
+            .data = .{ .func_ref = v },
+        };
+    }
+
+    pub fn newExternRef(v: *ExternRef) Val {
+        return Val{
+            .tag = .extern_ref,
+            .data = .{ .extern_ref = v },
+        };
+    }
+
     /// Deletes an owned `Val`.
     ///
     /// Note that this only deletes the contents, not the memory that `val` points to

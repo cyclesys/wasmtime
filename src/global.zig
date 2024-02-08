@@ -74,17 +74,17 @@ pub const Global = extern struct {
     /// the one provided.
     ///
     /// This function does not take ownership of any of its arguments.
-    pub fn new(ctx: *lib.Context, ty: *const lib.GlobalType, val: *const lib.Val) !Global {
+    pub fn new(ctx: *lib.Context, ty: *const lib.GlobalType, val: lib.Val) !Global {
         var g: Global = undefined;
-        try err.result(c.wasmtime_global_new(@ptrCast(ctx), @ptrCast(ty), @ptrCast(val), @ptrCast(&g)));
+        try err.result(c.wasmtime_global_new(@ptrCast(ctx), @ptrCast(ty), @ptrCast(&val), @ptrCast(&g)));
         return g;
     }
 
     /// Returns the wasm type of the specified global.
     ///
     /// The returned `GlobalType` is owned by the caller.
-    pub fn typ(g: *const Global, ctx: *lib.Context) *lib.GlobalType {
-        return @ptrCast(c.wasmtime_global_type(@ptrCast(ctx), @ptrCast(g)));
+    pub fn typ(g: Global, ctx: *lib.Context) *lib.GlobalType {
+        return @ptrCast(c.wasmtime_global_type(@ptrCast(ctx), @ptrCast(&g)));
     }
 
     /// Get the value of the specified global.
@@ -94,9 +94,9 @@ pub const Global = extern struct {
     ///
     /// This function returns ownership of the contents of the returned `Val`, so
     /// `Val.delete` may need to be called on the value.
-    pub fn get(g: *const Global, ctx: *lib.Context) lib.Val {
+    pub fn get(g: Global, ctx: *lib.Context) lib.Val {
         var val: lib.Val = undefined;
-        c.wasmtime_global_get(@ptrCast(ctx), @ptrCast(g), @ptrCast(&val));
+        c.wasmtime_global_get(@ptrCast(ctx), @ptrCast(&g), @ptrCast(&val));
         return val;
     }
 
@@ -110,7 +110,7 @@ pub const Global = extern struct {
     /// the wrong type for `g`.
     ///
     /// This does not take ownership of any argument.
-    pub fn set(g: *const Global, ctx: *lib.Context, val: *const lib.Val) !void {
-        try err.result(c.wasmtime_global_set(@ptrCast(ctx), @ptrCast(g), @ptrCast(val)));
+    pub fn set(g: Global, ctx: *lib.Context, val: lib.Val) !void {
+        try err.result(c.wasmtime_global_set(@ptrCast(ctx), @ptrCast(&g), @ptrCast(&val)));
     }
 };

@@ -67,7 +67,7 @@ pub const FuncType = opaque {
 ///
 /// The purpose of this structure is to acquire a `Context` pointer to interact with
 /// objects, but it can also be used for inspect the state of the caller (such as
-/// getting memories and functions) with `Caller.exportGet`.
+/// getting memories and functions) with `Caller.getExport`.
 ///
 /// This object is never owned and does not need to be deleted.
 pub const Caller = opaque {
@@ -82,10 +82,10 @@ pub const Caller = opaque {
     ///
     /// Returns an `*Extern` value if the export was found, or `null` if the export wasn't
     /// found.
-    pub fn exportGet(cal: *Caller, name: []const u8) ?*lib.Extern {
-        var ret: c.wasmtime_extern_t = undefined;
-        if (c.wasmtime_caller_export_get(@ptrCast(cal), @ptrCast(name.ptr), name.len, &ret)) {
-            return @ptrCast(ret);
+    pub fn getExport(cal: *Caller, name: []const u8) ?lib.Extern {
+        var ret: lib.Extern = undefined;
+        if (c.wasmtime_caller_export_get(@ptrCast(cal), @ptrCast(name.ptr), name.len, @ptrCast(&ret))) {
+            return ret;
         }
         return null;
     }
@@ -317,11 +317,11 @@ pub const Func = extern struct {
     ///
     /// Does not take ownership of the vals in `args`.
     /// Gives ownership of the vals in `ret_vals`.
-    pub fn call(f: *const Func, ctx: *lib.Context, args: ?[]const lib.Val, ret_vals: ?[]lib.Val) !?*lib.Trap {
+    pub fn call(f: Func, ctx: *lib.Context, args: ?[]const lib.Val, ret_vals: ?[]lib.Val) !?*lib.Trap {
         var t: ?*lib.Trap = null;
         try err.result(c.wasmtime_func_call(
             @ptrCast(ctx),
-            @ptrCast(f),
+            @ptrCast(&f),
             if (args) |a| @ptrCast(a.ptr) else null,
             if (args) |a| a.len else 0,
             if (ret_vals) |rv| @ptrCast(rv.ptr) else null,
@@ -369,11 +369,11 @@ pub const Func = extern struct {
     ///
     /// Does not take ownership of the vals in `args`.
     /// Gives ownership of the vals in `ret_vals`.
-    pub fn callUnchecked(f: *const Func, ctx: *lib.Context, args_and_ret_vals: []lib.RawVal) !?*lib.Trap {
+    pub fn callUnchecked(f: Func, ctx: *lib.Context, args_and_ret_vals: []lib.RawVal) !?*lib.Trap {
         var t: ?*lib.Trap = null;
         try err.result(c.wasmtime_func_call_unchecked(
             @ptrCast(ctx),
-            @ptrCast(f),
+            @ptrCast(&f),
             @ptrCast(args_and_ret_vals.ptr),
             args_and_ret_vals.len,
             @ptrCast(&t),
@@ -407,7 +407,7 @@ pub const Func = extern struct {
     /// For more information see the Rust documentation at
     /// https://docs.wasmtime.dev/api/wasmtime/struct.Func.html#method.call_async
     pub fn callAsync(
-        f: *const Func,
+        f: Func,
         ctx: *lib.Context,
         args: ?[]const lib.Val,
         ret_vals: ?[]lib.Val,
@@ -415,7 +415,7 @@ pub const Func = extern struct {
     ) *Future {
         return @ptrCast(c.wasmtime_func_call_async(
             @ptrCast(ctx),
-            @ptrCast(f),
+            @ptrCast(&f),
             if (args) |a| @ptrCast(a.ptr) else null,
             if (args) |a| a.len else 0,
             if (ret_vals) |rv| @ptrCast(rv.ptr) else null,
@@ -448,8 +448,8 @@ pub const Func = extern struct {
     }
 
     /// Converts a `Func`  which belongs to `ctx` into a `RawVal.func_ref`.
-    pub fn toRaw(f: *const Func, ctx: *lib.Context) lib.RawVal {
-        const func_ref = c.wasmtime_func_to_raw(@ptrCast(ctx), @ptrCast(f));
+    pub fn toRaw(f: Func, ctx: *lib.Context) lib.RawVal {
+        const func_ref = c.wasmtime_func_to_raw(@ptrCast(ctx), @ptrCast(&f));
         return lib.RawVal{ .func_ref = func_ref };
     }
 };

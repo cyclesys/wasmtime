@@ -42,7 +42,7 @@ pub const Linker = opaque {
     ///
     /// For more information about name resolution consult the [Rust
     /// documentation](https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Linker.html#name-resolution).
-    pub fn define(l: *Linker, ctx: *lib.Context, mod: []const u8, name: []const u8, ext: *const lib.Extern) !void {
+    pub fn define(l: *Linker, ctx: *lib.Context, mod: []const u8, name: []const u8, ext: lib.Extern) !void {
         try err.result(c.wasmtime_linker_define(
             @ptrCast(l),
             @ptrCast(ctx),
@@ -50,7 +50,7 @@ pub const Linker = opaque {
             mod.len,
             @ptrCast(name.ptr),
             name.len,
-            @ptrCast(ext),
+            @ptrCast(&ext),
         ));
     }
 
@@ -188,13 +188,13 @@ pub const Linker = opaque {
     ///
     /// For more information about name resolution consult the [Rust
     /// documentation](https://bytecodealliance.github.io/wasmtime/api/wasmtime/struct.Linker.html#name-resolution).
-    pub fn defineInstance(l: *Linker, ctx: *lib.Context, name: []const u8, ins: *const lib.Instance) !void {
+    pub fn defineInstance(l: *Linker, ctx: *lib.Context, name: []const u8, inst: lib.Instance) !void {
         try err.result(c.wasmtime_linker_define_instance(
             @ptrCast(l),
             @ptrCast(ctx),
             @ptrCast(name.ptr),
             name.len,
-            @ptrCast(ins),
+            @ptrCast(&inst),
         ));
     }
 

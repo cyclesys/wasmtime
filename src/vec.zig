@@ -56,9 +56,9 @@ pub fn Vec(comptime Elem: type, comptime elem_name: []const u8) type {
         ///
         /// The vector that is being written to should not be previously
         /// intialized.
-        pub fn copy(v: *ElemVec, src: ElemVec) void {
+        pub fn copy(dest: *ElemVec, src: ElemVec) void {
             const f = decl("copy");
-            f(@ptrCast(v), @ptrCast(&src));
+            f(@ptrCast(dest), @ptrCast(&src));
         }
 
         /// The elements of the vector.

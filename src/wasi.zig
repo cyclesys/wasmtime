@@ -63,6 +63,7 @@ pub const WasiConfig = opaque {
     /// By default WASI programs have no stdin, but this configures the specified
     /// bytes to be used as stdin for this configuration.
     pub fn setStdinBytes(cfg: *WasiConfig, bytes: []const u8) void {
+        // wasmtime takes ownership of this byte vec, so there's no need to delete it.
         var byte_vec = lib.ByteVec.new(bytes);
         c.wasi_config_set_stdin_bytes(@ptrCast(cfg), @ptrCast(&byte_vec));
     }

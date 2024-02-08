@@ -77,17 +77,17 @@ pub const Table = extern struct {
     /// This function does not take ownership of any of its parameters.
     ///
     /// This function may return an error if the `init` value does not match `ty`, for example.
-    pub fn new(ctx: *lib.Context, ty: *const lib.TableType, init: *const lib.Val) !Table {
+    pub fn new(ctx: *lib.Context, ty: *const lib.TableType, init: lib.Val) !Table {
         var t: Table = undefined;
-        try err.result(c.wasmtime_table_new(@ptrCast(ctx), @ptrCast(ty), @ptrCast(init), @ptrCast(&t)));
+        try err.result(c.wasmtime_table_new(@ptrCast(ctx), @ptrCast(ty), @ptrCast(&init), @ptrCast(&t)));
         return t;
     }
 
     /// Returns the type of this table.
     ///
     /// The caller has ownership of the returned `TableType`.
-    pub fn typ(t: *const Table, ctx: *const lib.Context) *lib.TableType {
-        return @ptrCast(c.wasmtime_table_type(@ptrCast(ctx), @ptrCast(t)));
+    pub fn typ(t: Table, ctx: *const lib.Context) *lib.TableType {
+        return @ptrCast(c.wasmtime_table_type(@ptrCast(ctx), @ptrCast(&t)));
     }
 
     /// Gets a value in a table.
@@ -99,9 +99,9 @@ pub const Table = extern struct {
     /// This function will attempt to access a table element. A `Val` is returned if
     /// `index` is valid, and the `Val` is owned by the caller. `null` is returned
     /// if the `index` is out of bounds.
-    pub fn get(t: *const Table, ctx: *lib.Context, index: u32) ?lib.Val {
+    pub fn get(t: Table, ctx: *lib.Context, index: u32) ?lib.Val {
         var val: lib.Val = undefined;
-        if (c.wasmtime_table_get(@ptrCast(ctx), @ptrCast(t), index, @ptrCast(&val))) {
+        if (c.wasmtime_table_get(@ptrCast(ctx), @ptrCast(&t), index, @ptrCast(&val))) {
             return val;
         }
         return null;
@@ -119,13 +119,13 @@ pub const Table = extern struct {
     ///
     /// This function can fail if `val` has the wrong type for the table, or if
     /// `index` is out of bounds.
-    pub fn set(t: *const Table, ctx: *lib.Context, index: usize, val: *const lib.Val) !void {
-        try err.result(c.wasmtime_table_set(@ptrCast(ctx), @ptrCast(t), index, @ptrCast(val)));
+    pub fn set(t: Table, ctx: *lib.Context, index: usize, val: lib.Val) !void {
+        try err.result(c.wasmtime_table_set(@ptrCast(ctx), @ptrCast(&t), index, @ptrCast(&val)));
     }
 
     /// Returns the size, in elements, of the specified table
-    pub fn size(t: *const Table, ctx: *const lib.Context) u32 {
-        return c.wasmtime_table_size(@ptrCast(ctx), @ptrCast(t));
+    pub fn size(t: Table, ctx: *const lib.Context) u32 {
+        return c.wasmtime_table_size(@ptrCast(ctx), @ptrCast(&t));
     }
 
     /// Grows a table.
@@ -143,9 +143,9 @@ pub const Table = extern struct {
     /// of the table in elements, before the growth happened, is returned.
     ///
     /// This function does not take ownership of any of its arguments.
-    pub fn grow(t: *const Table, ctx: *lib.Context, delta: u32, init: *const lib.Val) !u32 {
+    pub fn grow(t: Table, ctx: *lib.Context, delta: u32, init: lib.Val) !u32 {
         var prev_size: u32 = undefined;
-        try err.result(c.wasmtime_table_grow(@ptrCast(ctx), @ptrCast(t), delta, @ptrCast(init), &prev_size));
+        try err.result(c.wasmtime_table_grow(@ptrCast(ctx), @ptrCast(&t), delta, @ptrCast(&init), &prev_size));
         return prev_size;
     }
 };

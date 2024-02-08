@@ -81,28 +81,28 @@ pub const Memory = extern struct {
     }
 
     /// Returns the type of the memory specified
-    pub fn typ(m: *const Memory, ctx: *const lib.Context) *MemoryType {
-        return @ptrCast(c.wasmtime_memory_type(@ptrCast(ctx), @ptrCast(m)));
+    pub fn typ(m: Memory, ctx: *const lib.Context) *MemoryType {
+        return @ptrCast(c.wasmtime_memory_type(@ptrCast(ctx), @ptrCast(&m)));
     }
 
     /// Returns the base pointer in memory where the linear memory starts.
-    pub fn ptr(m: *const Memory, ctx: *const lib.Context) [*]u8 {
-        return @ptrCast(c.wasmtime_memory_data(@ptrCast(ctx), @ptrCast(m)));
+    pub fn ptr(m: Memory, ctx: *const lib.Context) [*]u8 {
+        return @ptrCast(c.wasmtime_memory_data(@ptrCast(ctx), @ptrCast(&m)));
     }
 
     /// Returns the length in bytes of this linear memory
-    pub fn size(m: *const Memory, ctx: *const lib.Context) usize {
-        return c.wasmtime_memory_data_size(@ptrCast(ctx), @ptrCast(m));
+    pub fn size(m: Memory, ctx: *const lib.Context) usize {
+        return c.wasmtime_memory_data_size(@ptrCast(ctx), @ptrCast(&m));
     }
 
     /// Returns the length in WebAssembly pages of this linear memory
-    pub fn pageSize(m: *const Memory, ctx: *const lib.Context) usize {
-        return c.wasmtime_memory_size(@ptrCast(ctx), @ptrCast(m));
+    pub fn pageSize(m: Memory, ctx: *const lib.Context) usize {
+        return c.wasmtime_memory_size(@ptrCast(ctx), @ptrCast(&m));
     }
 
     /// Convenience function that returns the memory as a slice of bytes.
     /// Calls `Memory.ptr` and `Memory.size` internally.
-    pub fn bytes(m: *const Memory, ctx: *const lib.Context) []u8 {
+    pub fn bytes(m: Memory, ctx: *const lib.Context) []u8 {
         const p = m.ptr(ctx);
         const len = m.size(ctx);
         return p[0..len];
@@ -116,9 +116,9 @@ pub const Memory = extern struct {
     ///
     /// If memory cannot be grown then an error is returned.
     /// Otherwise the previous size of the memory, in WebAssembly pages, is returned.
-    pub fn grow(m: *const Memory, ctx: *lib.Context, delta: u64) !u64 {
+    pub fn grow(m: Memory, ctx: *lib.Context, delta: u64) !u64 {
         var prev_size: u64 = undefined;
-        try err.result(c.wasmtime_memory_grow(@ptrCast(ctx), @ptrCast(m), delta, &prev_size));
+        try err.result(c.wasmtime_memory_grow(@ptrCast(ctx), @ptrCast(&m), delta, &prev_size));
         return prev_size;
     }
 };

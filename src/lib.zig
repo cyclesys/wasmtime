@@ -29,9 +29,7 @@ pub const Func = f.Func;
 const vec = @import("vec.zig");
 /// A list of bytes
 pub const ByteVec = vec.Vec(u8, "byte");
-
 /// Alias for `ByteVec`.
 pub const Name = ByteVec;
-
 /// Alias for `Name` i.e. a `ByteVec`.
 pub const Message = Name;
