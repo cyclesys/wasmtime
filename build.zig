@@ -3,13 +3,13 @@ const std = @import("std");
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
 
-    const artifact_path = try cacheArtifact(b, switch (target.result.os.tag) {
-        .linux => "x86_64-linux",
-        else => @panic("unsupported os"),
-    });
+    const artifact_path = try cacheArtifact(b, target);
     defer b.allocator.free(artifact_path);
 
-    const lib_object_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "lib", "libwasmtime.a" });
+    const lib_object_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "lib", switch (target.result.os.tag) {
+        .windows => "wasmtime.lib",
+        else => "libwasmtime.a",
+    } });
     defer b.allocator.free(lib_object_path);
 
     const lib_headers_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "include" });
@@ -23,11 +23,34 @@ pub fn build(b: *std.Build) !void {
     mod.addIncludePath(.{ .path = lib_headers_path });
 }
 
-fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {
+fn cacheArtifact(b: *std.Build, target: std.Build.ResolvedTarget) ![]const u8 {
     const cache_root = b.cache_root.path orelse ".";
 
-    const version = "v17.0.0";
-    const artifact = try std.mem.join(b.allocator, "-", &.{ "wasmtime", version, target, "c-api" });
+    const version = "v17.0.1";
+
+    var archive_format: []const u8 = "tar.xz";
+    const target_str = switch (target.result.os.tag) {
+        .linux => switch (target.result.cpu.arch) {
+            .aarch64 => "aarch64-linux",
+            .x86_64 => "x86_64-linux",
+            else => return error.UnsupportedTarget,
+        },
+        .macos => switch (target.result.cpu.arch) {
+            .aarch64 => "aarch64-macos",
+            .x86_64 => "x86_64-macos",
+            else => return error.UnsupportedTarget,
+        },
+        .windows => switch (target.result.cpu.arch) {
+            .x86_64 => blk: {
+                archive_format = "zip";
+                break :blk "x86_64-windows";
+            },
+            else => return error.UnsupportedTarget,
+        },
+        else => return error.UnsupportedTarget,
+    };
+
+    const artifact = try std.mem.join(b.allocator, "-", &.{ "wasmtime", version, target_str, "c-api" });
     defer b.allocator.free(artifact);
 
     const artifact_path = try std.fs.path.resolve(b.allocator, &.{ cache_root, artifact });
@@ -44,22 +67,26 @@ fn cacheArtifact(b: *std.Build, target: []const u8) ![]const u8 {
         return artifact_path;
     }
 
-    const tar_artifact = try std.mem.join(b.allocator, ".", &.{ artifact, "tar", "xz" });
-    defer b.allocator.free(tar_artifact);
+    const archived_artifact = try std.mem.join(b.allocator, ".", &.{ artifact, archive_format });
+    defer b.allocator.free(archived_artifact);
 
     const url = try std.mem.join(b.allocator, "/", &.{
         "https://github.com/bytecodealliance/wasmtime/releases/download",
         version,
-        tar_artifact,
+        archived_artifact,
     });
     defer b.allocator.free(url);
 
-    const tar_artifact_path = try std.fs.path.resolve(b.allocator, &.{ cache_root, tar_artifact });
-    defer b.allocator.free(tar_artifact_path);
+    const archived_artifact_path = try std.fs.path.resolve(b.allocator, &.{ cache_root, archived_artifact });
+    defer b.allocator.free(archived_artifact_path);
 
-    run(b, &.{ "curl", "-L", url, "-o", tar_artifact_path });
-    run(b, &.{ "tar", "-xf", tar_artifact_path, "-C", cache_root });
-    run(b, &.{ "rm", tar_artifact_path });
+    run(b, &.{ "curl", "-L", url, "-o", archived_artifact_path });
+    if (std.mem.eql(u8, archive_format, "zip")) {
+        run(b, &.{ "unzip", archived_artifact_path, "-d", cache_root });
+    } else {
+        run(b, &.{ "tar", "-xf", archived_artifact_path, "-C", cache_root });
+    }
+    try std.fs.deleteFileAbsolute(archived_artifact_path);
     return artifact_path;
 }
 
