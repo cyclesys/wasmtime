@@ -2,14 +2,12 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
     const artifact_path = try cacheArtifact(b, target);
     defer b.allocator.free(artifact_path);
 
-    const lib_object_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "lib", switch (target.result.os.tag) {
-        .windows => "wasmtime.lib",
-        else => "libwasmtime.a",
-    } });
+    const lib_object_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "lib", "libwasmtime.a" });
     defer b.allocator.free(lib_object_path);
 
     const lib_headers_path = try std.fs.path.resolve(b.allocator, &.{ artifact_path, "include" });
@@ -18,9 +16,22 @@ pub fn build(b: *std.Build) !void {
     const mod = b.addModule("wasmtime", .{
         .root_source_file = .{ .path = "src/lib.zig" },
         .link_libcpp = true,
+        .target = target,
+        .optimize = optimize,
     });
     mod.addObjectFile(.{ .path = lib_object_path });
     mod.addIncludePath(.{ .path = lib_headers_path });
+    if (target.result.os.tag == .windows) {
+        mod.addCMacro("WASM_API_EXTERN", "");
+        mod.addCMacro("WASM_API_EXTERN", "");
+        mod.linkSystemLibrary("ws2_32", .{});
+        mod.linkSystemLibrary("advapi32", .{});
+        mod.linkSystemLibrary("userenv", .{});
+        mod.linkSystemLibrary("ntdll", .{});
+        mod.linkSystemLibrary("shell32", .{});
+        mod.linkSystemLibrary("ole32", .{});
+        mod.linkSystemLibrary("bcrypt", .{});
+    }
 }
 
 fn cacheArtifact(b: *std.Build, target: std.Build.ResolvedTarget) ![]const u8 {
@@ -43,7 +54,7 @@ fn cacheArtifact(b: *std.Build, target: std.Build.ResolvedTarget) ![]const u8 {
         .windows => switch (target.result.cpu.arch) {
             .x86_64 => blk: {
                 archive_format = "zip";
-                break :blk "x86_64-windows";
+                break :blk "x86_64-mingw";
             },
             else => return error.UnsupportedTarget,
         },
